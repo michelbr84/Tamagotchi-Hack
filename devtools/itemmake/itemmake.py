@@ -1,19 +1,19 @@
 import sys
-import Image
+from PIL import Image
 
 def tofourbit(a):
-	#print a
+	#print(a)
 	if ((a > -1) and (a < 1)):
-		return 3;
+		return 3
 	if ((a > 0) and (a < 8)):
-		return 2;
+		return 2
 	if ((a > 7) and (a < 10 )):
-		return 1;
+		return 1
 	if (a > 9):
-		return 0;
+		return 0
 def conv(a):
 
-	t = 0;
+	t = 0
 	t = t | (tofourbit(ord(a) & 0x0f) << 2)
 	t = t | (tofourbit((ord(a) & 0xf0) >> 4))
 	return t
@@ -26,7 +26,7 @@ def getnote(n):
 
 def imconv(path):
 
-	s = ""
+	s = b""
 	tmp = 0
 	rol = 0
 	im = Image.open(path)
@@ -35,22 +35,22 @@ def imconv(path):
 	width = im.size[0]
 	height = im.size[1]
 	while ( i < (width * height) ):
-		tmp = 0;
+		tmp = 0
 		for j in range(0, 4):
 			
-			tmp = tmp | tofourbit(im.getpixel(((i)%width, (i)/width)))
+			tmp = tmp | tofourbit(im.getpixel(((i)%width, (i)//width)))
 			
 			i =  i + 1
 			if j != 3:
 				tmp = tmp * 4
-			#print tmp
+			#print(tmp)
 
-		s = s + chr(tmp)
+		s = s + bytes([tmp])
 	
 	#f = open("pic.txt", 'ab')
-	r = ""
-	r = r + chr(width)
-	r = r + chr(height)
+	r = b""
+	r = r + bytes([width])
+	r = r + bytes([height])
 	r = r + s
 	return r
 
@@ -64,16 +64,16 @@ t = bytearray(t)
 f.close()
 sm = 0
 if( script.pop(0).strip("\n\r") != "SOUND MULTIPLIER:"):
-	print "error"
+	print("error")
 script.pop(0)
 
 sm = int(script.pop(0).strip("\n\r"))
 
-print sm
+print(sm)
 script.pop(0)
 
 if( script.pop(0).strip("\n\r") != "IMAGE TABLE:"):
-	print "error"
+	print("error")
 
 script.pop(0)
 
@@ -84,7 +84,7 @@ while(i != ""):
 	imagetable.append(i)
 	i = script.pop(0).strip("\n\r")
 
-imdata = ""
+imdata = b""
 imptr = 0x50000
 imptrptr = 0x4f1
 
@@ -119,9 +119,9 @@ for item in imagetable:
 	s = item[:index]
 	s = s[s.rfind('\\')+1:]
 	ftable.append(s)
-print ftable
+print(ftable)
 
-cbuf = ""
+cbuf = b""
 on = True
 
 while on:
@@ -129,21 +129,21 @@ while on:
 	if(command == "IMAGE:"):
 		script.pop(0).strip("\n\r")
 		im, time = script.pop(0).strip("\n\r").split(' ')
-		cbuf =  cbuf + chr(ftable.index(im) + 0xb1)
-		cbuf = cbuf + "\x80\x00\x00\x00" + chr(int(time, 16))
+		cbuf =  cbuf + bytes([ftable.index(im) + 0xb1])
+		cbuf = cbuf + b"\x80\x00\x00\x00" + bytes([int(time, 16)])
 		script.pop(0).strip("\n\r")
 	if(command == "NOTE:"):
 		script.pop(0).strip("\n\r")
-		#print script.pop(0).strip("\n\r")
+		#print(script.pop(0).strip("\n\r"))
 		im, note, time = script.pop(0).strip("\n\r").split(' ')
-		b = "\xfe\xff" + chr(getnote(note)) + "\x00\x00\x00"
-		cbuf = cbuf + chr(ftable.index(im) + 0xb1)  + "\x80\x00\x00\x00\x01"
-		b = b + "\xb0\x80\x00\x00\x00\x03"
+		b = b"\xfe\xff" + bytes([getnote(note)]) + b"\x00\x00\x00"
+		cbuf = cbuf + bytes([ftable.index(im) + 0xb1])  + b"\x80\x00\x00\x00\x01"
+		b = b + b"\xb0\x80\x00\x00\x00\x03"
 		for j in range(0, sm * int(time, 16)):
 			cbuf = cbuf + b
 		script.pop(0).strip("\n\r")
 	if(command == "END"):
-		cbuf = cbuf + "\xff\xff"
+		cbuf = cbuf + b"\xff\xff"
 		on = False
 	
 for j in range(0, len(cbuf)):
